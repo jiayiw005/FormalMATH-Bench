@@ -1,0 +1,118 @@
+[
+  {
+    "theorem_names": "int_trivial_correct",
+    "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem int_trivial_correct : True := by\n```",
+    "answers": [
+      "```lean4\nimport Mathlib\n\ntheorem int_trivial_correct : True := by\n  trivial\n```"
+    ]
+  },
+  {
+    "theorem_names": "int_trivial_wrong",
+    "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem int_trivial_wrong : True := by\n```",
+    "answers": [
+      "```lean4\nimport Mathlib\n\ntheorem int_trivial_wrong : True := by\n  exact Nat.zero\n```"
+    ]
+  },
+  {
+    "theorem_names": "int_sorry_simple",
+    "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem int_sorry_simple : 1 + 1 = 2 := by\n```",
+    "answers": [
+      "```lean4\nimport Mathlib\n\ntheorem int_sorry_simple : 1 + 1 = 2 := by\n  sorry\n```"
+    ]
+  },
+  {
+    "theorem_names": "int_sorry_hidden",
+    "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem int_sorry_hidden (n : Nat) : n < n + 1 := by\n```",
+    "answers": [
+      "```lean4\nimport Mathlib\n\ntheorem int_sorry_hidden (n : Nat) : n < n + 1 := by\n  have h : n < n + 1 := by sorry\n  exact h\n```"
+    ]
+  },
+  {
+    "theorem_names": "int_false_unprovable",
+    "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem int_false_unprovable : False := by\n```",
+    "answers": [
+      "```lean4\nimport Mathlib\n\ntheorem int_false_unprovable : False := by\n  trivial\n```",
+      "```lean4\nimport Mathlib\n\ntheorem int_false_unprovable : False := by\n  simp\n```"
+    ]
+  },
+  {
+    "theorem_names": "int_omega",
+    "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem int_omega (a b : Nat) : a + b = b + a := by\n```",
+    "answers": [
+      "```lean4\nimport Mathlib\n\ntheorem int_omega (a b : Nat) : a + b = b + a := by\n  omega\n```"
+    ]
+  },
+  {
+    "theorem_names": "int_ring",
+    "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\nopen Real\n\ntheorem int_ring (x y : ℝ) : (x + y)^2 = x^2 + 2*x*y + y^2 := by\n```",
+    "answers": [
+      "```lean4\nimport Mathlib\n\nopen Real\n\ntheorem int_ring (x y : ℝ) : (x + y)^2 = x^2 + 2*x*y + y^2 := by\n  ring\n```"
+    ]
+  },
+  {
+    "theorem_names": "int_norm_num",
+    "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem int_norm_num : (7 : ℤ) * 13 = 91 := by\n```",
+    "answers": [
+      "```lean4\nimport Mathlib\n\ntheorem int_norm_num : (7 : ℤ) * 13 = 91 := by\n  norm_num\n```"
+    ]
+  },
+  {
+    "theorem_names": "int_simp",
+    "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem int_simp (n : Nat) : n + 0 = n := by\n```",
+    "answers": [
+      "```lean4\nimport Mathlib\n\ntheorem int_simp (n : Nat) : n + 0 = n := by\n  simp\n```"
+    ]
+  },
+  {
+    "theorem_names": "int_natural_language_preamble",
+    "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem int_natural_language_preamble : 0 = 0 := by\n```",
+    "answers": [
+      "Sure! Here's the proof for the theorem. The key insight is that reflexivity handles this directly.\n\n```lean4\nimport Mathlib\n\ntheorem int_natural_language_preamble : 0 = 0 := by\n  rfl\n```\n\nThe `rfl` tactic works because both sides of the equation are definitionally equal."
+    ]
+  },
+  {
+    "theorem_names": "int_no_code_fence",
+    "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem int_no_code_fence : True := by\n```",
+    "answers": [
+      "I cannot solve this, but let me try thinking about it differently."
+    ]
+  },
+  {
+    "theorem_names": "int_extra_whitespace",
+    "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem int_extra_whitespace (n : Nat) : n = n := by\n```",
+    "answers": [
+      "```lean4\nimport Mathlib\n\ntheorem int_extra_whitespace (n : Nat) :  n = n  := by\n  rfl\n```"
+    ]
+  },
+  {
+    "theorem_names": "int_mixed_correct_incorrect",
+    "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem int_mixed_correct_incorrect (n : Nat) : n ≤ n := by\n```",
+    "answers": [
+      "```lean4\nimport Mathlib\n\ntheorem int_mixed_correct_incorrect (n : Nat) : n ≤ n := by\n  omega\n```",
+      "```lean4\nimport Mathlib\n\ntheorem int_mixed_correct_incorrect (n : Nat) : n ≤ n := by\n  exact Nat.lt_irrefl n\n```",
+      "```lean4\nimport Mathlib\n\ntheorem int_mixed_correct_incorrect (n : Nat) : n ≤ n := by\n  sorry\n```",
+      "```lean4\nimport Mathlib\n\ntheorem int_mixed_correct_incorrect (n : Nat) : n ≤ n := by\n  rfl\n```"
+    ]
+  },
+  {
+    "theorem_names": "int_open_scoped",
+    "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\nopen Real Set\nopen scoped BigOperators\n\ntheorem int_open_scoped (x : ℝ) : x * 1 = x := by\n```",
+    "answers": [
+      "```lean4\nimport Mathlib\n\nopen Real Set\nopen scoped BigOperators\n\ntheorem int_open_scoped (x : ℝ) : x * 1 = x := by\n  ring\n```"
+    ]
+  },
+  {
+    "theorem_names": "int_empty_answers",
+    "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem int_empty_answers : True := by\n```",
+    "answers": []
+  },
+  {
+    "theorem_names": "int_multistep",
+    "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem int_multistep (a b : Nat) (h : a = b) : b = a := by\n```",
+    "answers": [
+      "```lean4\nimport Mathlib\n\ntheorem int_multistep (a b : Nat) (h : a = b) : b = a := by\n  rw [h]\n```",
+      "```lean4\nimport Mathlib\n\ntheorem int_multistep (a b : Nat) (h : a = b) : b = a := by\n  exact h.symm\n```",
+      "```lean4\nimport Mathlib\n\ntheorem int_multistep (a b : Nat) (h : a = b) : b = a := by\n  exact h\n```"
+    ]
+  }
+]

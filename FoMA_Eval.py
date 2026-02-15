@@ -38,6 +38,12 @@ def parse_args():
                         help="Number of answers to generate per process via vllm.")
     parser.add_argument("--nums_answer", type=int, default=3200,
                         help="Number of answers to generate per question.")
+    parser.add_argument("--backend", type=str, default="vllm",
+                    choices=["vllm", "openrouter"],
+                    help="Choose generation backend: vllm (local GPU) or openrouter (API).")
+    parser.add_argument("--openrouter_model", type=str,
+                    default="deepseek/deepseek-prover-v2",
+                    help="OpenRouter model name to use when backend=openrouter.")
 
     # Verification parameters
     parser.add_argument("--repl_path", default="./repl",

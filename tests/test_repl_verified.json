@@ -1,0 +1,53 @@
+{
+    "test_trivial_true": [
+        {
+            "answer": "Here is the proof:\n\n```lean4\nimport Mathlib\n\ntheorem test_trivial_true : True := by\n  trivial\n```\n\nThis is obviously true.",
+            "answer_bool": true
+        },
+        {
+            "answer": "Here is an incorrect proof:\n\n```lean4\nimport Mathlib\n\ntheorem test_trivial_true : True := by\n  exact Nat.zero\n```\n\nThis should fail.",
+            "answer_bool": false
+        }
+    ],
+    "test_add_comm": [
+        {
+            "answer": "Wrong proof:\n\n```lean4\nimport Mathlib\n\ntheorem test_add_comm (a b : Nat) : a + b = b + a := by\n  rfl\n```\n\nThis should fail because addition is not definitionally commutative.",
+            "answer_bool": false
+        },
+        {
+            "answer": "Correct proof:\n\n```lean4\nimport Mathlib\n\ntheorem test_add_comm (a b : Nat) : a + b = b + a := by\n  omega\n```",
+            "answer_bool": true
+        }
+    ],
+    "test_sorry_rejected": [
+        {
+            "answer": "Proof using sorry (should be REJECTED):\n\n```lean4\nimport Mathlib\n\ntheorem test_sorry_rejected (n : Nat) : n = n := by\n  sorry\n```",
+            "answer_bool": false
+        },
+        {
+            "answer": "Correct proof:\n\n```lean4\nimport Mathlib\n\ntheorem test_sorry_rejected (n : Nat) : n = n := by\n  rfl\n```",
+            "answer_bool": true
+        }
+    ],
+    "test_false_not_provable": [
+        {
+            "answer": "This cannot be proven:\n\n```lean4\nimport Mathlib\n\ntheorem test_false_not_provable : False := by\n  simp\n```",
+            "answer_bool": false
+        },
+        {
+            "answer": "Also cannot be proven:\n\n```lean4\nimport Mathlib\n\ntheorem test_false_not_provable : False := by\n  exact absurd rfl rfl\n```",
+            "answer_bool": false
+        }
+    ],
+    "test_no_code_fence": [
+        {
+            "answer": "I'm not sure how to prove this, but here is my attempt without a code block.",
+            "answer_bool": false
+        },
+        {
+            "answer": "Here is the proof:\n\n```lean4\nimport Mathlib\n\ntheorem test_no_code_fence : 1 + 1 = 2 := by\n  norm_num\n```",
+            "answer_bool": true
+        }
+    ],
+    "test_empty_answers": []
+}

@@ -1,0 +1,47 @@
+[
+    {
+        "theorem_names": "test_trivial_true",
+        "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem test_trivial_true : True := by\n```",
+        "answers": [
+            "Here is the proof:\n\n```lean4\nimport Mathlib\n\ntheorem test_trivial_true : True := by\n  trivial\n```\n\nThis is obviously true.",
+            "Here is an incorrect proof:\n\n```lean4\nimport Mathlib\n\ntheorem test_trivial_true : True := by\n  exact Nat.zero\n```\n\nThis should fail."
+        ]
+    },
+    {
+        "theorem_names": "test_add_comm",
+        "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem test_add_comm (a b : Nat) : a + b = b + a := by\n```",
+        "answers": [
+            "Correct proof:\n\n```lean4\nimport Mathlib\n\ntheorem test_add_comm (a b : Nat) : a + b = b + a := by\n  omega\n```",
+            "Wrong proof:\n\n```lean4\nimport Mathlib\n\ntheorem test_add_comm (a b : Nat) : a + b = b + a := by\n  rfl\n```\n\nThis should fail because addition is not definitionally commutative."
+        ]
+    },
+    {
+        "theorem_names": "test_sorry_rejected",
+        "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem test_sorry_rejected (n : Nat) : n = n := by\n```",
+        "answers": [
+            "Proof using sorry (should be REJECTED):\n\n```lean4\nimport Mathlib\n\ntheorem test_sorry_rejected (n : Nat) : n = n := by\n  sorry\n```",
+            "Correct proof:\n\n```lean4\nimport Mathlib\n\ntheorem test_sorry_rejected (n : Nat) : n = n := by\n  rfl\n```"
+        ]
+    },
+    {
+        "theorem_names": "test_false_not_provable",
+        "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem test_false_not_provable : False := by\n```",
+        "answers": [
+            "This cannot be proven:\n\n```lean4\nimport Mathlib\n\ntheorem test_false_not_provable : False := by\n  simp\n```",
+            "Also cannot be proven:\n\n```lean4\nimport Mathlib\n\ntheorem test_false_not_provable : False := by\n  exact absurd rfl rfl\n```"
+        ]
+    },
+    {
+        "theorem_names": "test_no_code_fence",
+        "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem test_no_code_fence : 1 + 1 = 2 := by\n```",
+        "answers": [
+            "I'm not sure how to prove this, but here is my attempt without a code block.",
+            "Here is the proof:\n\n```lean4\nimport Mathlib\n\ntheorem test_no_code_fence : 1 + 1 = 2 := by\n  norm_num\n```"
+        ]
+    },
+    {
+        "theorem_names": "test_empty_answers",
+        "autoformalization": "\nComplete the following Lean 4 code:\n```lean4\nimport Mathlib\n\ntheorem test_empty_answers : 0 = 0 := by\n```",
+        "answers": []
+    }
+]

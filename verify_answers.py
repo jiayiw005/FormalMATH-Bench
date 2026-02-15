@@ -40,7 +40,7 @@ class InteractiveThread(threading.Thread):
             if self.context == None:
                 initialize_check = {"cmd": "def init_check : Nat := 42"}
                 self.send_cmd(initialize_check)
-            self.session.expect('"env": 0}\r\n\r\n', timeout=self.expect_timeout)  # If the context contains 'sorries', it will have more keys other than 'env'
+            self.session.expect('"env": 0}\r\n\r\n', timeout=self.expect_timeout) 
             self.init_complete.set()
         except:
             self.init_complete.set()
@@ -63,7 +63,7 @@ class InteractiveThread(threading.Thread):
         
         self.cmd_query_condition.set()
 
-        self.cmd_response_condition.wait()  # Wait for the response
+        self.cmd_response_condition.wait() 
         self.cmd_response_condition.clear()
         if self.response:
             output = self.response
@@ -73,30 +73,31 @@ class InteractiveThread(threading.Thread):
 
     def process_responses(self):
         while not self.stop_flag:
-            self.cmd_query_condition.wait()  # Wait for input 
+            self.cmd_query_condition.wait()
             self.cmd_query_condition.clear()
 
-            if self.stop_flag:  # Terminate session
+            if self.stop_flag:
                 break
 
             try:
-                self.session.expect('\r\n\r\n', timeout=self.expect_timeout)  # Filter out input; pexpect prints the input twice for unknown reasons
+                self.session.expect('\r\n\r\n', timeout=self.expect_timeout) 
                 self.session.expect(['\r\n\r\n', pexpect.EOF], timeout=self.expect_timeout)
                 output = self.session.before.strip()
                 output_dict = json.loads(output)
                 self.response = output_dict
                 self.cmd_response_condition.set()  
 
+            # prevent deadlocks
             except pexpect.TIMEOUT:
                 print("Output timeout")
-                self.cmd_response_condition.set()  # Prevent thread deadlock
-                break  # Terminate session
+                self.cmd_response_condition.set()
+                break
             except pexpect.EOF:
                 print("Session ended unexpectedly.")
-                self.cmd_response_condition.set()  # Prevent thread deadlock
+                self.cmd_response_condition.set()
                 break
             except json.JSONDecodeError as e:
-                self.cmd_response_condition.set()  # Prevent thread deadlock
+                self.cmd_response_condition.set() 
                 print(output)
                 break
 
@@ -125,7 +126,7 @@ class InteractiveThread(threading.Thread):
             
             self.session.sendline(command)
             self.initialize_check()
-            self.process_responses()  # Continuously process responses
+            self.process_responses()
             self.stop()
     
         except Exception as e:
@@ -160,46 +161,113 @@ def process_batch(batch_id, item, batch_answers, context, autoformalization,
         expect_timeout=expect_timeout
     )
     thread.start()
-    thread.init_complete.wait()  # Wait for initialization to complete
+    thread.init_complete.wait() 
 
     results = []
     try:
         for answer in batch_answers:
             # Verify each answer in the batch
             verified_answer, answer_bool = process_answer(item, answer, autoformalization, thread)
-            results.append({"answer": verified_answer, "answer_bool": answer_bool})  # Collect results
+            results.append({"answer": verified_answer, "answer_bool": answer_bool}) 
     finally:
         thread.stop()
         thread.join()
     
     return results
 
+def extract_proof_body(raw_answer, autoformalization):
+    """
+    Extract just the proof body from an LLM-generated answer.
+    
+    The raw_answer typically looks like:
+        "Here's a proof...\n```lean4\nimport Mathlib\n...\ntheorem foo := by\n  <tactics>\n```\n"
+    
+    We need to extract just the tactic body after `:= by` so it can be
+    concatenated with the autoformalization (which ends with `:= by`).
+    
+    Falls back to multiple extraction strategies.
+    """
+    # extract code from inside a ```lean4 or ```lean or ``` code fence
+    code = None
+    match = re.search(r'```(?:lean4?|)\n(.*?)```', raw_answer, re.DOTALL)
+    if match:
+        code = match.group(1).strip()
+    
+    if code is None:
+        # if no code fence, maybe the whole answer is code (unlikely but handle it)
+        # Only use this if the answer looks like it starts with lean code
+        if raw_answer.strip().startswith(('import ', 'theorem ', 'def ', 'lemma ', 'example ')):
+            code = raw_answer.strip()
+        else:
+            return None
+    
+    # try to find the theorem/def/lemma name from the autoformalization
+    name_match = re.match(r'(theorem|def|lemma|example)\s+(\S+)', autoformalization.strip())
+    
+    if name_match:
+        theorem_keyword = name_match.group(1)
+        theorem_name = re.escape(name_match.group(2))
+        # find this specific theorem in the code and extract everything after its `:= by`
+        # use a pattern that matches the theorem declaration and captures everything after `:= by`
+        pattern = rf'{theorem_keyword}\s+{theorem_name}.*?:=\s*by\b(.*)'
+        theorem_match = re.search(pattern, code, re.DOTALL)
+        if theorem_match:
+            proof_body = theorem_match.group(1)
+            # temove any trailing ``` or explanation text after the code
+            return '\n' + proof_body.rstrip()
+    
+    # fallback: find the last `:= by` and take everything after it
+    # This handles cases where name matching fails
+    for separator in [':= by\n', ':= by ', ':=by\n', ':=by ', ':= by']:
+        idx = code.rfind(separator)
+        if idx != -1:
+            proof_body = code[idx + len(separator):]
+            return '\n' + proof_body.rstrip()
+    
+    # if autoformalization doesn't end with `by`, 
+    # the answer might be a term-mode proof. Try to extract after `:=`
+    if not autoformalization.rstrip().endswith('by'):
+        idx = code.rfind(':=')
+        if idx != -1:
+            proof_body = code[idx + 2:]
+            return ' ' + proof_body.rstrip()
+    
+    return None
+
+
 def process_answer(item, answer, autoformalization, thread):
-    answer = answer.split("```")[0]
+    proof_body = extract_proof_body(answer, autoformalization)
+    
+    if proof_body is None:
+        print(f"  Warning: Could not extract proof body from answer")
+        return answer, False
+    
+    cmd = autoformalization + proof_body
+    
     try:
-        outcome = thread.submit_and_receive({"cmd": autoformalization + answer, "env": 0})
+        outcome = thread.submit_and_receive({"cmd": cmd, "env": 0})
         if outcome is None:
             return answer, False
         
-        # Check for errors or incomplete content in the result
+        # check for errors or sorries in the result
+        has_error = False
+        has_sorries = 'sorries' in outcome  # top-level sorries key
+        
         if "messages" in outcome:
-            is_error = False
-            is_sorries = False
-            for i in range(len(outcome["messages"])):
-                if outcome["messages"][i]["severity"] == "error":
-                    is_error = True
-                elif outcome["messages"][i]["severity"] == "sorries" or 'sorries' in outcome.keys():
-                    is_sorries = True
-            if is_error or is_sorries:
-                return answer, False
-            else:
-                return answer, True
-        return answer, True
+            for msg in outcome["messages"]:
+                if msg.get("severity") == "error":
+                    has_error = True
+        
+        if has_error or has_sorries:
+            return answer, False
+        else:
+            return answer, True
+            
     except Exception as e:
         print(f"Error in process_answer: {e}")
         return answer, False
 
-# Load existing progress (if available)
+# load existing progress (if available)
 def load_progress_from_file(filepath):
     """
     Load a JSON progress file, attempting to recover data from incomplete JSON
@@ -220,7 +288,7 @@ def load_progress_from_file(filepath):
             print(f"Error loading file {filepath}: {e}")
     return {}  
 
-# Save data to a file
+# save data to a file
 def save_to_file(filepath, data):
     try:
         with open(filepath, "w", encoding="utf-8") as f:
@@ -253,34 +321,61 @@ def verify_answers(
     Returns:
         dict: Verification results
     """
-    # Set up logging
+    # logging
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     
-    # Load existing data
+    # load existing data
     final_proof_dict = load_progress_from_file(output_file)
 
-    # Load theorems to be processed
+    # load theorems to be processed
     with open(input_file, "r") as f:
         data = json.load(f)
 
-    # Initialize thread lock
+    # initialize thread lock
     lock = threading.Lock()
 
     for item in data:
         theorem_name = item["theorem_names"]
-
-        # Skip if theorem has already been processed
+        
         if theorem_name in final_proof_dict:
             print(f"Theorem {theorem_name} already processed. Skipping...")
             continue
 
-        # item["autoformalization"]= "\nComplete the following Lean 4 code:\n```lean4\n"+item['autoformalization'].replace("sorry", "\n")
+        # Pprse the autoformalization to extract context (imports/opens) and theorem statement
+        raw_auto = item["autoformalization"]
+        
+        # extract the lean code block
+        if "```lean4\n" in raw_auto:
+            lean_code = raw_auto.split("```lean4\n")[1]
+        elif "```lean\n" in raw_auto:
+            lean_code = raw_auto.split("```lean\n")[1]
+        elif "```\n" in raw_auto:
+            lean_code = raw_auto.split("```\n")[1]
+        else:
+            lean_code = raw_auto
+        
+        if lean_code.endswith("```"):
+            lean_code = lean_code[:-3]
+        
+        # split into context (imports/opens) and the theorem statement
+        # find the first theorem/def/lemma declaration
+        split_match = re.search(r'^(theorem|def|lemma|example)\s', lean_code, re.MULTILINE)
+        if split_match:
+            context = lean_code[:split_match.start()]
+            autoformalization = lean_code[split_match.start():]
+        else:
+            print(f"Warning: Could not find theorem/def/lemma in autoformalization for {theorem_name}")
+            context = lean_code
+            autoformalization = ""
 
-        autoformalization = item["autoformalization"].split("```lean4\n")[1]
-        context = autoformalization.split("theorem")[0] or autoformalization.split("def")[0]
-        autoformalization = autoformalization.replace(context, "", 1)
-        # Allocate resources according to thread count
+        # allocate resources according to thread count
         answers = item["answers"]
+        
+        if not answers:
+            print(f"Theorem {theorem_name} has no answers. Skipping...")
+            final_proof_dict[theorem_name] = []
+            save_to_file(output_file, final_proof_dict)
+            continue
     
         batch_size = math.ceil(len(answers) / num_batches)
         batches = [answers[i:i+batch_size] for i in range(0, len(answers), batch_size)]
@@ -288,7 +383,7 @@ def verify_answers(
 
         all_results = []  
 
-        # Process batches in parallel using thread pool
+        # process batches in parallel using thread pool
         with ThreadPoolExecutor(max_workers=num_batches) as executor:
             futures = []
             for batch_id, batch in enumerate(batches):
@@ -305,16 +400,14 @@ def verify_answers(
                     expect_timeout
                 ))
 
-            # Collect results for each batch
+            # collect results for each batch
             for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures)):
                 batch_results = future.result()
                 all_results.extend(batch_results)
 
-        # Save new theorem results to the final dictionary
+        # save new theorem results to the final dictionary
         with lock:
             final_proof_dict[theorem_name] = all_results
-
-        # Save progress
         save_to_file(output_file, final_proof_dict)
 
     save_to_file(output_file, final_proof_dict)
@@ -323,13 +416,13 @@ def verify_answers(
 def parse_args():
     parser = argparse.ArgumentParser(description="Verify Lean theorem proofs")
     
-    # File paths
+    # file paths
     parser.add_argument("--input_file", required=True,
                         help="Path to the input file containing answers to be verified")
     parser.add_argument("--output_file", required=True,
                         help="Path to the output file to save verification results")
     
-    # Verification parameters
+    # verification parameters
     parser.add_argument("--repl_path", default="/workspace/ky_ding/math/minictx-eval/repl",
                         help="Path to Lean REPL")
     parser.add_argument("--lean_env_path", default="/workspace/ky_ding/math/minictx-eval/repl/test/Mathlib",
@@ -337,7 +430,7 @@ def parse_args():
     parser.add_argument("--num_batches", default=96, type=int,
                         help="Number of parallel verification batches")
     
-    # Timeout parameters
+    # timeout parameters
     parser.add_argument("--session_timeout", default=600, type=int,
                       help="Timeout for interactive sessions (in seconds)")
     parser.add_argument("--expect_timeout", default=120, type=int,
