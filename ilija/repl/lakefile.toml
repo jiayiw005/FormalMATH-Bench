@@ -1,0 +1,18 @@
+name = "REPL"
+defaultTargets = ["repl"]
+
+[[lean_lib]]
+name = "REPL"
+
+[[lean_exe]]
+name = "repl"
+root = "REPL.Main"
+supportInterpreter = true
+
+[[lean_exe]]
+name = "test"
+root = "Test"
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
